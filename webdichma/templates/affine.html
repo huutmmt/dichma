@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mã hóa affine</title>
+</head>
+<body>
+    <h1>Mã hóa affine</h1>
+    <form method="POST">
+        <label for="input">Nhập văn bản:</label><br>
+        <input type="text" id="input" name="input"><br>
+        <label for="key1">Nhập khóa 1:</label><br>
+        <input type="number" id="key1" name="key1"><br>
+        <label for="key2">Nhập khóa 2:</label><br>
+        <input type="number" id="key2" name="key2"><br>
+        <input type="submit" value="Mã hóa">
+        <input type="submit" value="Giải mã">
+        
+    </form>
+    <p>Mã hóa: {{ encrypted_text }}</p>
+    <p>Giải mã: {{ decrypted_text }}</p>
+
+    <p><a href="/">Quay lại trang chủ</a></p>
+</body>
+</html>
