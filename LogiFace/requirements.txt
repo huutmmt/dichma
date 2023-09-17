@@ -1,3 +1,5 @@
-dlib
-face_recognition
+# dlib
+# face_recognition
 opencv-python
+pillow 
+numpy
