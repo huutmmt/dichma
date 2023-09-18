@@ -5,6 +5,8 @@ from PIL import Image
 
 # huu cap nhat 
 
+# tung cap nhat
+
 # Create LBPH Face Recognizer
 recognizer = cv2.face.LBPHFaceRecognizer.create()
 path = 'dataSet'
