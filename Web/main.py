@@ -37,12 +37,13 @@ def apply_color_filter(frame, filter_name):
     elif filter_name == 'gray':
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     elif filter_name == 'sepia':
-    filter_name = np.array([[0.272, 0.534, 0.131],
-                             [0.349, 0.686, 0.168],
-                             [0.393, 0.769, 0.189]])
+        filter_name = np.array([[0.272, 0.534, 0.131],
+                                [0.349, 0.686, 0.168],
+                                [0.393, 0.769, 0.189]])
         return cv2.transform(frame, filter_name)
 
     return frame
 
 if __name__ == '__main__':
     app.run(debug=True)
+    

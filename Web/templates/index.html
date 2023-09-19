@@ -11,9 +11,11 @@
     <!-- Form for selecting filters -->
     <form action="/apply_filter" method="POST">
         <label for="filter">Select a filter:</label>
+        <script>console.log("Selected Filter:", selectedFilter);</script>
         <select name="filter" id="filter">
             <option value="negative">Negative</option>
             <option value="gray">Grayscale</option>
+            <option value="sepia">Sepia</option>
         </select>
         <input type="submit" id="applyFilter" value="Apply Filter">
 
@@ -25,13 +27,18 @@
     </div>
     
     <script>
-        const filterSelect = document.getElementById('filter'); // Corrected the ID
-        const applyFilterBtn = document.getElementById('applyFilter');
+        // Declare the selectedFilter variable
+        let selectedFilter;
+
+        const filterSelect = document.getElementById('filter');
+        const filterForm = document.querySelector('form');
         const videoFeed = document.getElementById('videoFeed');
 
-        applyFilterBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            const selectedFilter = filterSelect.value;
+        filterForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent the form from submitting normally
+
+            selectedFilter = filterSelect.value; // Assign the selected filter
+            console.log("Selected Filter:", selectedFilter); // Log the selected filter
             fetch('/apply_filter', {
                 method: 'POST',
                 body: JSON.stringify({ filter: selectedFilter }),
