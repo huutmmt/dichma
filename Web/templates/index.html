@@ -7,22 +7,30 @@
 </head>
 <body>
     <h1>Camera Filter</h1>
-    <select id="filterSelect">
-        <option value="">No Filter</option>
-        <option value="negative">Negative</option>
-        <option value="gray">Grayscale</option>
-    </select>
-    <button id="applyFilter">Apply Filter</button>
+    
+    <!-- Form for selecting filters -->
+    <form action="/apply_filter" method="POST">
+        <label for="filter">Select a filter:</label>
+        <select name="filter" id="filter">
+            <option value="negative">Negative</option>
+            <option value="gray">Grayscale</option>
+        </select>
+        <input type="submit" id="applyFilter" value="Apply Filter">
+
+    </form>
+    
+    <!-- Video feed display -->
     <div>
         <video id="videoFeed" autoplay playsinline width="640" height="480"></video>
     </div>
+    
     <script>
-        const filterSelect = document.getElementById('filterSelect');
+        const filterSelect = document.getElementById('filter'); // Corrected the ID
         const applyFilterBtn = document.getElementById('applyFilter');
         const videoFeed = document.getElementById('videoFeed');
 
-
-        applyFilterBtn.addEventListener('click', () => {
+        applyFilterBtn.addEventListener('click', (event) => {
+            event.preventDefault();
             const selectedFilter = filterSelect.value;
             fetch('/apply_filter', {
                 method: 'POST',

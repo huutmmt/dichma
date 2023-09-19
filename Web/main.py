@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, jsonify
 import cv2
 import numpy as np
 
@@ -13,8 +13,9 @@ def index():
 @app.route('/apply_filter', methods=['POST'])
 def apply_filter():
     global selected_filter
-    selected_filter = request.form['filter']
-    return '', 204
+    data = request.get_json()  # Get data sent as JSON
+    selected_filter = data['filter']
+    return jsonify({'success': True}), 200
 
 def generate_frames():
     while True:
@@ -35,6 +36,12 @@ def apply_color_filter(frame, filter_name):
         return cv2.bitwise_not(frame)
     elif filter_name == 'gray':
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    elif filter_name == 'sepia':
+    filter_name = np.array([[0.272, 0.534, 0.131],
+                             [0.349, 0.686, 0.168],
+                             [0.393, 0.769, 0.189]])
+        return cv2.transform(frame, filter_name)
+
     return frame
 
 if __name__ == '__main__':
