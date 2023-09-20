@@ -1,69 +1,90 @@
 import cv2
+import numpy as np
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
-class ImageSmoothingApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Image Smoothing App")
+# Định nghĩa các hàm chỉnh sửa ảnh
+def convert_to_grayscale(image):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        self.canvas = tk.Canvas(root, width=640, height=480)
-        self.canvas.pack()
+def blur_image(image):
+    return cv2.GaussianBlur(image, (5, 5), 0)
 
-        self.load_button = tk.Button(root, text="Chọn ảnh", command=self.load_image)
-        self.load_button.pack()
+def edge_detection(image):
+    return cv2.Canny(image, 100, 200)
 
-        self.smooth_button = tk.Button(root, text="Làm mịn ảnh", command=self.smooth_image, state=tk.DISABLED)
-        self.smooth_button.pack()
+def resize_image(image, width, height):
+    return cv2.resize(image, (width, height))
 
-        self.save_button = tk.Button(root, text="Lưu ảnh", command=self.save_image, state=tk.DISABLED)
-        self.save_button.pack()
+# Tạo danh sách chức năng chỉnh sửa ảnh
+image_editing_functions = {
+    "Grayscale": convert_to_grayscale,
+    "Blur": blur_image,
+    "Edge Detection": edge_detection,
+    "Resize": resize_image
+}
 
-        self.image = None
-        self.photo = None
+# Hàm để chuyển đổi mảng numpy thành đối tượng hình ảnh Tkinter
+def convert_numpy_to_photoimage(numpy_array):
+    pil_image = Image.fromarray(numpy_array)
+    return ImageTk.PhotoImage(pil_image)
 
-    def load_image(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp")])
-        if file_path:
-            self.image = Image.open(file_path)
-            self.display_image()
-            self.smooth_button.config(state=tk.NORMAL)
+# Hàm để cập nhật canvas với ảnh mới
+def update_canvas_with_image(image_array, canvas):
+    photo_image = convert_numpy_to_photoimage(image_array)
+    canvas.create_image(0, 0, anchor=tk.NW, image=photo_image)
+    canvas.photo = photo_image
 
-    def smooth_image(self):
-        if self.image:
-            try:
-                # Chuyển ảnh thành numpy array
-                image_array = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
+# Hàm để chọn chức năng chỉnh sửa ảnh dựa trên lựa chọn của người dùng
+def apply_selected_function():
+    selected_function = editing_function_var.get()
+    if selected_function and selected_function in image_editing_functions:
+        image = image_editing_functions[selected_function](original_image.copy())
+        update_canvas_with_image(image, edited_image_canvas)
 
-                # Áp dụng bộ lọc Gaussian Blur để làm mịn ảnh
-                smoothed_image_array = cv2.GaussianBlur(image_array, (5, 5), 0)
+# Hàm để mở ảnh từ tệp
+def open_image():
+    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp")])
+    if file_path:
+        global original_image
+        original_image = cv2.imread(file_path)
+        update_canvas_with_image(original_image.copy(), original_image_canvas)
+        update_canvas_with_image(original_image.copy(), edited_image_canvas)
 
-                # Chuyển lại thành định dạng PIL Image
-                smoothed_image = Image.fromarray(cv2.cvtColor(smoothed_image_array, cv2.COLOR_BGR2RGB))
+# Tạo cửa sổ Tkinter
+root = tk.Tk()
+root.title("Image Editor")
 
-                self.image = smoothed_image
-                self.display_image()
-                self.save_button.config(state=tk.NORMAL)
-            except Exception as e:
-                messagebox.showerror("Lỗi", "Có lỗi xảy ra khi làm mịn ảnh: " + str(e))
+# Tạo thanh menu
+menu = tk.Menu(root)
+root.config(menu=menu)
 
-    def save_image(self):
-        if self.image:
-            file_path = filedialog.asksaveasfilename(defaultextension=".jpg", filetypes=[("JPEG files", "*.jpg")])
-            if file_path:
-                try:
-                    self.image.save(file_path)
-                    messagebox.showinfo("Thành công", "Lưu ảnh thành công!")
-                except Exception as e:
-                    messagebox.showerror("Lỗi", "Có lỗi xảy ra khi lưu ảnh: " + str(e))
+file_menu = tk.Menu(menu)
+menu.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="Open", command=open_image)
+file_menu.add_separator()
+file_menu.add_command(label="Exit", command=root.quit)
 
-    def display_image(self):
-        if self.image:
-            self.photo = ImageTk.PhotoImage(self.image)
-            self.canvas.create_image(0, 0, anchor=tk.NW, image=self.photo)
+# Tạo hai canvas để hiển thị ảnh gốc và ảnh đã chỉnh sửa
+original_image_canvas = tk.Canvas(root, width=400, height=600)
+original_image_canvas.pack(side=tk.LEFT)
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ImageSmoothingApp(root)
-    root.mainloop()
+edited_image_canvas = tk.Canvas(root, width=400, height=600)
+edited_image_canvas.pack(side=tk.RIGHT)
+
+# Tạo phần tử hộp chọn để chọn chức năng chỉnh sửa ảnh
+editing_function_var = tk.StringVar()
+editing_function_var.set("Grayscale")  # Mặc định chọn Grayscale
+editing_function_optionmenu = tk.OptionMenu(root, editing_function_var, *image_editing_functions.keys())
+editing_function_optionmenu.pack()
+
+# Tạo nút để áp dụng chức năng chỉnh sửa ảnh
+apply_button = tk.Button(root, text="Apply", command=apply_selected_function)
+apply_button.pack()
+
+# Khởi tạo biến lưu ảnh gốc
+original_image = None
+
+# Chạy ứng dụng
+root.mainloop()
