@@ -30,7 +30,7 @@ def draw_rectangle(event, x, y, flags, params):
 #Giải thuật Grabcut
 def run_grabcut(img_orig, rect_final):
     anhgoc=img_orig.copy()
-    nen=cv2.imread('data/flamingos.jpg')
+    nen=cv2.imread('data/dep.jpg')
     nen=cv2.resize(nen, (img_orig.shape[1],img_orig.shape[0]))
     # Initialize the mask
     mask = np.zeros(img_orig.shape[:2],np.uint8)
@@ -57,7 +57,7 @@ if __name__=='__main__':
     drawing = False
     top_left_pt, bottom_right_pt = (-1,-1), (-1,-1)
     # Read the input image
-    img_orig = cv2.imread('data/hands1.jpg')
+    img_orig = cv2.imread('image/meo.jpg')
     img = img_orig.copy()
     cv2.namedWindow('Input')
     cv2.setMouseCallback('Input', draw_rectangle)
