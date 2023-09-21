@@ -1,69 +1,78 @@
 import cv2
+import dlib
 import numpy as np
 
-#Vẽ hình chữ nhật dựa trên vùng đã chọn
-def draw_rectangle(event, x, y, flags, params):
-    global x_init, y_init, drawing, top_left_pt, bottom_right_pt,img_orig,bd
-    #Phát hiện sự kiện nhấn chuột trái
-    if event == cv2.EVENT_LBUTTONDOWN:
-        drawing = True
-        x_init, y_init = x, y
-    
-    #Phát hiện di chuyển chuột
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if drawing:
-            top_left_pt, bottom_right_pt = (x_init,y_init), (x,y)
-            img[y_init:y, x_init:x] = 255 - img_orig[y_init:y,x_init:x]
-            cv2.rectangle(img, top_left_pt, bottom_right_pt,(0,255,0), 2)
-    
-    #Phát hiện sự kiện thả chuột trái
-    elif event == cv2.EVENT_LBUTTONUP:
-        drawing = False
-        top_left_pt, bottom_right_pt = (x_init,y_init), (x,y)
-        img[y_init:y, x_init:x] = 255 - img[y_init:y, x_init:x]
-        cv2.rectangle(img, top_left_pt, bottom_right_pt,
-        (0,255,0), 2)
-        rect_final = (x_init, y_init, x-x_init, y-y_init)   
-    #Chạy Grabcut trên vùng quan tâm ROI (region of interest)
-    run_grabcut(img_orig, rect_final)        
-    
-#Giải thuật Grabcut
-def run_grabcut(img_orig, rect_final):
-    anhgoc=img_orig.copy()
-    nen=cv2.imread('data/dep.jpg')
-    nen=cv2.resize(nen, (img_orig.shape[1],img_orig.shape[0]))
-    # Initialize the mask
-    mask = np.zeros(img_orig.shape[:2],np.uint8)
-    # Extract the rectangle and set the region of
-    # interest in the above mask
-    x,y,w,h = rect_final
-    mask[y:y+h, x:x+w] = 1
-    # Initialize background and foreground models
-    bgdModel = np.zeros((1,65), np.float64)
-    fgdModel = np.zeros((1,65), np.float64)
-    # Run Grabcut algorithm
-    cv2.grabCut(img_orig, mask, rect_final, bgdModel, fgdModel,
-                5, cv2.GC_INIT_WITH_RECT)
-    # Extract new mask
-    mask2 = np.where((mask==2)|(mask==0),0,1).astype('uint8')
-    cv2.imshow('mask',mask2*255)
-    # Tạo ảnh kết quả thay nền mới
-    img_orig = img_orig*mask2[:,:,np.newaxis]+ nen* (1 - mask2[:, :, np.newaxis])
-    # Trường hợp khác
-    anhketqua=cv2.bitwise_and(anhgoc,nen,mask=mask2)
-    cv2.imshow('ghep anh',anhketqua)
-    cv2.imshow('ghep nen',img_orig)
-if __name__=='__main__':
-    drawing = False
-    top_left_pt, bottom_right_pt = (-1,-1), (-1,-1)
-    # Read the input image
-    img_orig = cv2.imread('image/meo.jpg')
-    img = img_orig.copy()
-    cv2.namedWindow('Input')
-    cv2.setMouseCallback('Input', draw_rectangle)
-    while True:
-        cv2.imshow('Input', img)
-        c = cv2.waitKey(1)
-        if c == 27:
-            break
-    cv2.destroyAllWindows()
+# Khởi tạo webcam hoặc thiết bị ghi hình video (thay đổi index nếu cần)
+cap = cv2.VideoCapture(0)
+
+crown_image = cv2.imread('image/pngegg.png', -1)
+
+# Kiểm tra xem webcam có hoạt động hay không
+if not cap.isOpened():
+    print("Không thể mở webcam hoặc thiết bị ghi hình video.")
+    exit()
+
+# Thiết lập kích thước khung hình
+frame_width = int(cap.get(3))
+frame_height = int(cap.get(4))
+
+# Tạo VideoWriter để lưu video đầu ra
+out = cv2.VideoWriter('output_video.avi', cv2.VideoWriter_fourcc(*'XVID'), 20, (frame_width, frame_height))
+
+# Khởi tạo bộ phát hiện khuôn mặt
+face_detector = dlib.get_frontal_face_detector()
+
+# Khởi tạo dlib facial landmarks predictor
+landmarks_predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Chuyển đổi video sang đen trắng để tăng tốc độ xử lý
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Phát hiện khuôn mặt trong khung hình
+    faces = face_detector(gray)
+
+    for face in faces:
+        # Xác định vị trí của khuôn mặt
+        x, y, w, h = face.left(), face.top(), face.width(), face.height()
+
+        # Tính toán vị trí cho vương miện (ví dụ: giữa đầu)
+        crown_x = x + w // 2 - crown_image.shape[1] // 2
+        crown_y = y - crown_image.shape[0]
+
+        # Đảm bảo vương miện không vượt ra khỏi video
+        if crown_x < 0:
+            crown_x = 0
+        if crown_y < 0:
+            crown_y = 0
+
+        # Cắt ảnh vương miện nếu nó ra ngoài video
+        if crown_x + crown_image.shape[1] > frame.shape[1]:
+            crown_image = crown_image[:, :frame.shape[1] - crown_x]
+        if crown_y + crown_image.shape[0] > frame.shape[0]:
+            crown_image = crown_image[:frame.shape[0] - crown_y, :]
+
+        # Thêm vương miện vào khung hình
+        for c in range(0, 3):
+            frame[crown_y:crown_y + crown_image.shape[0], crown_x:crown_x + crown_image.shape[1], c] = \
+                frame[crown_y:crown_y + crown_image.shape[0], crown_x:crown_x + crown_image.shape[1], c] * \
+                (1 - crown_image[:, :, 3] / 255.0) + \
+                crown_image[:, :, c] * (crown_image[:, :, 3] / 255.0)
+
+    # Ghi khung hình đã xử lý vào video đầu ra
+    out.write(frame)
+
+    # Hiển thị video trực tiếp
+    cv2.imshow('AR Video', frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Giải phóng các tài nguyên
+cap.release()
+# out.release()
+cv2.destroyAllWindows()
